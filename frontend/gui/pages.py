@@ -76,7 +76,7 @@ def login_page():
                 authenticate_user(login_response)
                 st.rerun()
             else:
-                st.error(login_response.get("detail", "Authentication failed. Please check credentials."))
+                st.error(api_utils.format_auth_error(login_response, "Authentication failed. Please check credentials."))
 
 
 def register_page():
@@ -92,7 +92,6 @@ def register_page():
     with st.form("register_form"):
         col1, col2 = st.columns(2)
         email = col1.text_input("Email Address *", placeholder="name@company.com")
-        username = col1.text_input("Username *", max_chars=16, placeholder="johndoe")
         password = col1.text_input("Password *", type="password", max_chars=32, placeholder="••••••••")
         first_name = col2.text_input("First Name", max_chars=50, placeholder="John")
         last_name = col2.text_input("Last Name", max_chars=50, placeholder="Doe")
@@ -102,16 +101,17 @@ def register_page():
     back_to_home_component()
 
     if submitted:
-        if not email or not username or not password:
+        if not email or not password:
             st.error("Please complete all required fields (*).")
             return
+        
         register_data = {
             "email": email,
-            "username": username,
             "password": password,
             "first_name": first_name,
             "last_name": last_name,
         }
+
         with st.spinner("Creating workspace..."):
             register_response = api_utils.register_user(register_data)
             if message := register_response.get("message"):
@@ -119,7 +119,9 @@ def register_page():
                 st.session_state["page"] = Page.LOGIN
                 st.rerun()
             else:
-                st.error(register_response.get("detail", "Registration failed. Please check your inputs."))
+                st.error(api_utils.format_auth_error(register_response, "Registration failed. Please check inputs."))
+
+
 
 
 def back_to_home_component():

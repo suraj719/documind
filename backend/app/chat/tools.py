@@ -17,9 +17,12 @@ tavily = TavilySearchResults(
 @tool
 async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     """
-    Use this tool to answer questions about the user's uploaded documents.
-    It will automatically retrieve documents relevant to the current user and thread.
+    Search and retrieve relevant text chunks from the user's uploaded documents in PGVector.
+    Call this tool whenever the user refers to "this document", "the file", "attached PDF", "summary", or asks questions about uploaded content.
     """
+
+
+
     user_id = config["configurable"].get("user_id")  # type: ignore
     thread_id = config["configurable"].get("thread_id")  # type: ignore
     logger.info(f"Retrieving documents for user_id: {user_id} and thread_id: {thread_id}")

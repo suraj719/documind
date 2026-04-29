@@ -12,7 +12,7 @@ checkpointer: AsyncPostgresSaver | None = None
 async def create_connection() -> AsyncConnection:
     global connection
 
-    if connection is not None:
+    if connection is not None and not connection.closed:
         return connection
 
     logger.info("Creating checkpointer connection...")
@@ -23,9 +23,9 @@ async def create_connection() -> AsyncConnection:
 
 
 async def get_checkpointer() -> AsyncPostgresSaver:
-    global checkpointer
+    global checkpointer, connection
 
-    if checkpointer is not None:
+    if checkpointer is not None and connection is not None and not connection.closed:
         return checkpointer
 
     conn = await create_connection()
@@ -33,6 +33,7 @@ async def get_checkpointer() -> AsyncPostgresSaver:
     await checkpointer.setup()
     logger.info("✅ PostgresCheckpointer initialized successfully")
     return checkpointer
+
 
 
 async def close_connection() -> None:

@@ -14,7 +14,6 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    username: Mapped[str] = mapped_column(String(16), unique=True)
     email: Mapped[str] = mapped_column(String(40), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(25), nullable=True)
@@ -25,7 +24,8 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
     def __repr__(self):
-        return f"<User {self.username}>"
+        return f"<User {self.email}>"
+
 
 
 class Thread(Base):

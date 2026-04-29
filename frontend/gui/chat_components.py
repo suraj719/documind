@@ -44,10 +44,15 @@ def authenticated_user_chat_interface_component():
         for file in files:
             with st.spinner(f"Indexing `{file.name}` into Vector Store..."):
                 resp = api_utils.upload_document(st.session_state["thread"].id, file)
-                if resp:
-                    st.success(f"Indexed `{file.name}` ➔ Vector ID: `{resp['document_id']}`")
+                if resp and "document_id" in resp:
+                    if resp.get("warning"):
+                        st.warning(f"⚠️ {resp.get('message')}")
+                    else:
+                        st.success(f"✅ Indexed `{file.name}` ➔ Document ID: `{resp['document_id']}`")
                 else:
-                    st.error(f"Failed to index `{file.name}`")
+                    detail = resp.get("detail") if isinstance(resp, dict) else None
+                    st.error(f"Failed to index `{file.name}`: {detail or 'Unknown error'}")
+
 
         if files:
             update_document_list(st.session_state["thread"].id)
@@ -92,15 +97,32 @@ def authenticated_user_chat_interface_component():
                         st.session_state["thread"].messages.append({"role": "ai", "content": full_response})
 
                 except Exception as e:
-                    st.error("An error occurred while communicating with DocuMind backend.")
                     logger.error(f"Error in fetch_stream: {e}")
+                    err_str = str(e).lower()
+                    if "connect" in err_str or "connection" in err_str or "httpx" in err_str:
+                        user_friendly_err = "⚠️ **Cannot connect to DocuMind backend server.** Please verify the server is running at http://127.0.0.1:8000."
+                    elif "429" in err_str or "rate limit" in err_str:
+                        user_friendly_err = "⚠️ **Model Rate Limit Exceeded.** Please switch to another model from the sidebar or try again in a minute."
+                    elif "404" in err_str or "model" in err_str:
+                        user_friendly_err = "⚠️ **Selected AI model unavailable.** Please choose a different model from the sidebar dropdown."
+                    else:
+                        clean_err = str(e).split("\n")[0] if e else "Connection lost."
+                        user_friendly_err = f"⚠️ **Communication Error**: {clean_err}"
+
+                    st.error(user_friendly_err)
                     if is_first_message:
                         api_utils.delete_thread(st.session_state["thread"].id)
                         logger.info(f"Thread {st.session_state['thread'].id} cleaned up.")
                         new_chat()
 
-            with st.spinner("DocuMind Copilot reasoning..."):
-                asyncio.run(fetch_stream())
+
+        with st.spinner("DocuMind Copilot reasoning..."):
+            asyncio.run(fetch_stream())
+
+        if is_first_message:
+            update_user_threads()
+            st.rerun()
+
 
 
 def unauthenticated_user_chat_interface_component():

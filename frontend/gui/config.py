@@ -19,10 +19,11 @@ logger.add(
 
 
 class Settings(BaseSettings):
-    backend_base_url: str
-    model_names: list[str]
+    backend_base_url: str = "http://127.0.0.1:8000/api/v1"
+    model_names: list[str] = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="allow")
+
 
 
 settings = Settings()  # type: ignore

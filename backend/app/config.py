@@ -26,38 +26,47 @@ logger.add(
 
 class Settings(BaseSettings):
     api_key: SecretStr = Field(alias="OPENAI_API_KEY")
-    tavily_api_key: str
-    model_provider: str
-    model_names: list[str]
+    tavily_api_key: str | None = None
+    model_provider: str = "groq"
+    model_names: list[str] = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
     model_base_url: str | None = None
-    embeddings_model_name: str
+    embeddings_model_name: str = "text-embedding-3-large"
     embeddings_base_url: str | None = None
-    token_bearer_url: str
+    token_bearer_url: str = "/api/v1/auth/login"
     jwt_secret: str
-    jwt_algorithm: str
-    access_token_expiry_mins: int
-    refresh_token_expiry_days: int
-    postgres_host: str
-    postgres_port: int
-    postgres_user: str
-    postgres_password: str
+    jwt_algorithm: str = "HS256"
+    access_token_expiry_mins: int = 1440
+    refresh_token_expiry_days: int = 1
+    postgres_host: str = "127.0.0.1"
+    postgres_port: int = 5432
+    postgres_user: str = "postgres"
+    postgres_password: str = "test"
     postgres_database: str = "documind_db"
     pgvector_collection_name: str = "documind_embeddings"
+
+
+    @property
+    def is_remote_db(self) -> bool:
+        return self.postgres_host not in ("127.0.0.1", "localhost", "documind_postgres")
 
     @property
     def database_uri(self) -> str:
         """Generate PostgreSQL connection string for sqlalchemy."""
-        return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+        base = f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+        return f"{base}?ssl=require" if self.is_remote_db else base
 
     @property
     def checkpointer_uri(self) -> str:
         """Generate PostgreSQL connection string for checkpointer."""
-        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}?sslmode=disable"
+        ssl_val = "require" if self.is_remote_db else "disable"
+        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}?sslmode={ssl_val}"
 
     @property
     def pgvector_connection(self) -> str:
         """Generate PostgreSQL connection string for PGVector."""
-        return f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+        base = f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
+        return f"{base}?sslmode=require" if self.is_remote_db else base
+
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="allow")
 

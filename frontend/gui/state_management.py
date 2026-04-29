@@ -18,16 +18,23 @@ class User:
     def __init__(
         self,
         is_authenticated: bool = False,
-        username: str | None = None,
+        email: str | None = None,
         access_token: str | None = None,
         refresh_token: str | None = None,
         threads: list[dict] | None = None,
     ):
         self.is_authenticated = is_authenticated
-        self.username = username
+        self.email = email
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.threads = threads or []
+
+    @property
+    def display_name(self) -> str:
+        if self.email and "@" in self.email:
+            return self.email.split("@")[0]
+        return self.email or "Guest"
+
 
 
 class Thread:
@@ -56,8 +63,9 @@ def initialize_state() -> None:
     if "thread" not in st.session_state:
         st.session_state["thread"] = Thread()
 
-    if "model_name" not in st.session_state:
-        st.session_state["model_name"] = MODEL_NAMES[0]
+    if "model_name" not in st.session_state or st.session_state["model_name"] not in settings.model_names:
+        st.session_state["model_name"] = settings.model_names[0]
+
 
 
 def new_chat():
@@ -113,12 +121,13 @@ def update_chat_history(thread_id: UUID) -> None:
 def authenticate_user(login_response: dict) -> None:
     st.session_state["user"] = User(
         is_authenticated=True,
-        username=login_response.get("user", {}).get("username"),
+        email=login_response.get("user", {}).get("email"),
         access_token=login_response.get("access_token"),
         refresh_token=login_response.get("refresh_token"),
     )
     update_user_threads()
     st.session_state["thread"] = Thread()
+
 
 
 def logout_user() -> None:

@@ -18,9 +18,11 @@ def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
         api_key=settings.api_key,
         base_url=settings.model_base_url or None,
         streaming=streaming,
+        max_tokens=800,
     )
 
     return model
+
 
 
 def build_retrival_graph(checkpointer: BaseCheckpointSaver, model_name: str) -> CompiledStateGraph:

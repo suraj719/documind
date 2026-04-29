@@ -13,6 +13,44 @@ TIMEOUT = 30
 ## Auth --------------------------------------------------------------------
 
 
+def format_auth_error(response: dict, default_msg: str = "Operation failed.") -> str:
+    """Formats API error payloads into clear, human-readable sentences."""
+    if not response:
+        return "⚠️ **Connection Error**: Unable to reach DocuMind backend server. Please verify the server is running."
+
+    detail = response.get("detail")
+    if not detail:
+        return response.get("message", default_msg)
+
+    # Handle string detail
+    if isinstance(detail, str):
+        detail_lower = detail.lower()
+        if "incorrect" in detail_lower or "invalid credentials" in detail_lower or "unauthorized" in detail_lower or "bad request" in detail_lower:
+            return "⚠️ **Invalid Email or Password**. Please check your credentials and try again."
+        elif "already exists" in detail_lower or "registered" in detail_lower or "taken" in detail_lower:
+            return "⚠️ **Account Already Exists**. An account with this email is already registered."
+
+        elif "not found" in detail_lower:
+            return "⚠️ **Account Not Found**. No registered account matches the provided email."
+        return f"⚠️ **{detail}**"
+
+    # Handle FastAPI 422 validation list of errors
+    if isinstance(detail, list):
+        formatted_msgs = []
+        for err in detail:
+            if isinstance(err, dict):
+                loc = err.get("loc", [])
+                field = loc[-1] if loc else "field"
+                msg = err.get("msg", "invalid value")
+                field_name = str(field).replace("_", " ").title()
+                formatted_msgs.append(f"• **{field_name}**: {msg}")
+            else:
+                formatted_msgs.append(f"• {str(err)}")
+        return "⚠️ **Validation Failed**:\n" + "\n".join(formatted_msgs)
+
+    return f"⚠️ {str(detail)}"
+
+
 def register_user(register_data: dict) -> dict:
     """
     Registers a user with the API.
@@ -36,7 +74,7 @@ def register_user(register_data: dict) -> dict:
         return response.json()
     except requests.exceptions.HTTPError as e:
         logger.error(f"Register user failed with status {e.response.status_code}. Response: {e.response.text}")
-        if e.response.status_code in [401, 403]:
+        if e.response.status_code in [400, 401, 403, 409, 422]:
             return e.response.json()
         return {}
     except requests.exceptions.RequestException as e:
@@ -45,6 +83,7 @@ def register_user(register_data: dict) -> dict:
     except Exception as e:
         logger.error(f"Register user failed with an unexpected exception: {str(e)}")
         return {}
+
 
 
 def login_user(email: str, password: str) -> dict:
@@ -72,9 +111,10 @@ def login_user(email: str, password: str) -> dict:
         return response.json()
     except requests.exceptions.HTTPError as e:
         logger.error(f"Login user failed with status {e.response.status_code}. Response: {e.response.text}")
-        if e.response.status_code in [401, 403]:
+        if e.response.status_code in [400, 401, 403, 404, 422]:
             return e.response.json()
         return {}
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Login user failed with RequestError: {str(e)}")
         return {}

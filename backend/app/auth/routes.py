@@ -51,8 +51,9 @@ async def login_users(form_data: OAuth2PasswordRequestFormDep, session: SessionD
         "message": "Login successful",
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "user": {"email": user.email, "id": str(user.id), "username": user.username},
+        "user": {"email": user.email, "id": str(user.id)},
     }
+
 
 
 @auth_router.get("/logout", response_model=LogoutResponse)

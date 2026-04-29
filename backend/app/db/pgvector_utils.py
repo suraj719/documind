@@ -11,12 +11,26 @@ from loguru import logger
 
 from app.config import settings
 
-embeddings = init_embeddings(
-    model=settings.embeddings_model_name,
-    base_url=settings.embeddings_base_url,
-    provider=settings.model_provider,
-    api_key=settings.api_key,
-)
+if "all-MiniLM" in settings.embeddings_model_name or "sentence-transformers" in settings.embeddings_model_name or settings.embeddings_model_name.startswith("huggingface"):
+    try:
+        from langchain_huggingface import HuggingFaceEmbeddings
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    except ImportError:
+        embeddings = init_embeddings(
+            model=settings.embeddings_model_name,
+            provider="openai",
+            base_url=settings.embeddings_base_url or None,
+            api_key=settings.api_key.get_secret_value(),
+        )
+else:
+    embeddings = init_embeddings(
+        model=settings.embeddings_model_name,
+        provider="openai",
+        base_url=settings.embeddings_base_url or None,
+        api_key=settings.api_key.get_secret_value(),
+    )
+
+
 
 
 vector_store = PGVector(
@@ -68,12 +82,24 @@ async def index_document_to_pgvector(file_path: Path, document_id: UUID, thread_
 
     logger.info(f"Starting indexing for document: {file_path} with document_id: {document_id}")
     splits = await _load_and_split_documents(file_path)
+    if not splits:
+        logger.warning(f"No text chunks extracted from {file_path}. Skipping vector store insertion.")
+        return []
+
     for split in splits:
+        if split.page_content:
+            split.page_content = split.page_content.replace("\x00", "")
+        if split.metadata:
+            split.metadata = {
+                k: (v.replace("\x00", "") if isinstance(v, str) else v)
+                for k, v in split.metadata.items()
+            }
         split.metadata["id"] = str(uuid4())
         split.metadata["file_name"] = file_path.name
         split.metadata["document_id"] = str(document_id)
         split.metadata["thread_id"] = str(thread_id)
         split.metadata["user_id"] = str(user_id)
+
 
     try:
         doc_ids = await vector_store.aadd_documents(splits, ids=[split.metadata["id"] for split in splits])
@@ -84,6 +110,7 @@ async def index_document_to_pgvector(file_path: Path, document_id: UUID, thread_
     except Exception as e:
         logger.error(f"Error adding documents to PGVector: {e}")
         raise
+
 
 
 async def search_documents_in_pgvector(query: str = "", k: int = 1, filter: dict | None = None) -> list[Document]:

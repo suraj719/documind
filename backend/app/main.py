@@ -1,4 +1,11 @@
+import asyncio
+import sys
+
 from fastapi import FastAPI
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 
 from app.auth.routes import auth_router
 from app.chat.routes import chat_router

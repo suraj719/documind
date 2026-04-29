@@ -53,12 +53,21 @@ async def upload_document(thread_id: UUID, file: UploadFile, current_user: Curre
         new_document = await document_service.insert_document(document_data, session)
         document_id = new_document.id
         chunk_ids = await index_document_to_pgvector(temp_file_path, document_id, thread_id, user_id)
+        if not chunk_ids:
+            logger.warning(f"File '{file.filename}' (document_id: {document_id}) yielded 0 text chunks.")
+            return {
+                "document_id": document_id,
+                "message": f"File '{file.filename}' uploaded, but contains no extractable text (image/scanned PDF).",
+                "warning": True,
+            }
         logger.info(f"File '{file.filename}' (document_id: {document_id}) successfully indexed to PGVector.")
 
         return {"document_id": document_id, "message": f"File {file.filename} uploaded and indexed successfully."}
+
     except Exception as e:
-        logger.error(f"An unexpected error occurred during upload of '{file.filename}': {e}", exc_info=True)
+        logger.exception(f"An unexpected error occurred during upload of '{file.filename}'")
         if document_id is not None:
+
             if chunk_ids:
                 try:
                     await delete_document_from_pgvector(chunk_ids)

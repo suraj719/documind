@@ -39,13 +39,17 @@ def authentication_component():
 
 
 def greeting_component():
-    st.sidebar.markdown(f"### 👤 {st.session_state['user'].username}")
-    if st.sidebar.button("➕ New Thread", use_container_width=True, type="primary"):
+    st.sidebar.markdown(f"### 👤 {st.session_state['user'].display_name}")
+    if st.sidebar.button("➕ New Chat", use_container_width=True, type="primary"):
         new_chat()
+
 
 
 def model_selection_component():
     st.sidebar.markdown("### 🤖 Intelligence Model")
+    if "model" in st.session_state and st.session_state["model"] not in settings.model_names:
+        st.session_state["model"] = settings.model_names[0]
+
     st.session_state["model_name"] = st.sidebar.selectbox(
         "Select Model",
         options=settings.model_names,
@@ -54,20 +58,30 @@ def model_selection_component():
     )
 
 
+
 def chat_history_component():
     st.sidebar.markdown("### 💬 Saved Conversations")
     threads = st.session_state["user"].threads
 
     if threads:
         for thread in threads:
-            col1, col2, col3 = st.sidebar.columns([0.15, 0.70, 0.15])
+            is_active = st.session_state.get("thread") and st.session_state["thread"].id == thread["id"]
+            active_class = "active-chat-item" if is_active else "chat-item"
+
+            st.sidebar.markdown(f'<div class="{active_class}">', unsafe_allow_html=True)
+            col1, col2 = st.sidebar.columns([0.84, 0.16])
             with col1:
-                if st.button("📌", key=f"select_{thread['id']}"):
+                title_label = thread["title"] if len(thread["title"]) <= 24 else thread["title"][:22] + "..."
+                if st.button(
+                    f"{title_label}",
+                    key=f"select_{thread['id']}",
+                    use_container_width=True,
+                    help=thread["title"],
+                ):
                     change_thread(thread["id"])
+                    st.rerun()
             with col2:
-                st.markdown(f"**{thread['title']}**")
-            with col3:
-                if st.button("🗑️", key=f"delete_{thread['id']}"):
+                if st.button("🗑️", key=f"delete_{thread['id']}", help="Delete Thread"):
                     with st.spinner(""):
                         delete_response = api_utils.delete_thread(thread["id"])
                         if delete_response.get("status") == "ok":
@@ -77,8 +91,11 @@ def chat_history_component():
                             st.rerun()
                         else:
                             st.sidebar.error("Failed to remove thread.")
+            st.sidebar.markdown("</div>", unsafe_allow_html=True)
     else:
         st.sidebar.caption("No saved conversations yet.")
+
+
 
 
 def document_list_component():

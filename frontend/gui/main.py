@@ -113,10 +113,81 @@ def inject_custom_css():
             display: inline-block;
             margin-bottom: 8px;
         }
+
+        /* Custom ChatGPT-style Sidebar Chat Cards */
+        [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.chat-item),
+        [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.active-chat-item) {
+            margin-bottom: -10px !important;
+            margin-top: 0px !important;
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"],
+        .active-chat-item [data-testid="stHorizontalBlock"] {
+            border-radius: 8px;
+            padding: 2px 4px;
+            margin-bottom: 2px !important;
+            transition: all 0.2s ease-in-out;
+            align-items: center;
+            gap: 2px !important;
+        }
+
+
+        .chat-item [data-testid="stHorizontalBlock"] {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"]:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .active-chat-item [data-testid="stHorizontalBlock"] {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #6366f1;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"] button,
+        .active-chat-item [data-testid="stHorizontalBlock"] button {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 4px 6px !important;
+            font-size: 0.84rem !important;
+            text-align: left !important;
+            color: #cbd5e1 !important;
+            line-height: 1.3 !important;
+        }
+
+        .active-chat-item [data-testid="stHorizontalBlock"] button {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"] button:hover,
+        .active-chat-item [data-testid="stHorizontalBlock"] button:hover {
+            color: #818cf8 !important;
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child button,
+        .active-chat-item [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child button {
+            font-size: 0.78rem !important;
+            opacity: 0.6;
+            padding: 4px 2px !important;
+            text-align: center !important;
+        }
+
+        .chat-item [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child button:hover,
+        .active-chat-item [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child button:hover {
+            opacity: 1.0;
+            color: #ef4444 !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
+
 
 
 def main():

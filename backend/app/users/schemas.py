@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class UserPublic(BaseModel):
     id: UUID
-    username: Annotated[str, Field(min_length=3, max_length=16)]
     email: EmailStr
     first_name: Annotated[str, Field(max_length=25)]
     last_name: Annotated[str, Field(max_length=25)]
@@ -20,7 +19,6 @@ class UserPublic(BaseModel):
 
 
 class UserCreate(BaseModel):
-    username: Annotated[str, Field(min_length=3, max_length=16)]
     email: EmailStr
     password: Annotated[str, Field(min_length=8, max_length=32)]
     first_name: Annotated[str, Field(max_length=25, default="")]
@@ -29,7 +27,6 @@ class UserCreate(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "username": "johndoe",
                 "email": "johndoe123@co.com",
                 "password": "testpass123",
                 "first_name": "John",
@@ -40,7 +37,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: Optional[Annotated[str, Field(min_length=3, max_length=16)]] = None
     email: Optional[EmailStr] = None
     first_name: Optional[Annotated[str, Field(min_length=3, max_length=25)]] = None
     last_name: Optional[Annotated[str, Field(min_length=3, max_length=25)]] = None
+
