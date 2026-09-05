@@ -8,6 +8,8 @@
 
 **DocuMind** is an enterprise-grade autonomous AI document intelligence and retrieval-augmented generation (RAG) platform. Powered by **FastAPI**, **LangGraph ReAct State Graphs**, **PostgreSQL + pgvector**, and **Streamlit**, DocuMind turns enterprise document repositories into real-time interactive intelligence.
 
+[🌐 Live Demo](https://documind7.streamlit.app)
+
 ---
 
 ## 🌟 Key Capabilities
@@ -113,8 +115,6 @@ docker compose up --build -d
 ### 3. Verify Endpoints
 
 - **Frontend Workspace**: [http://localhost:8501](http://localhost:8501)
-- **FastAPI OpenAPI Swagger**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
-- **ReDoc Technical Docs**: [http://localhost:8000/api/v1/redoc](http://localhost:8000/api/v1/redoc)
 
 ---
 
